@@ -1,7 +1,6 @@
 
 /**
- * Module dependencies.
- */
+ * Module dependencies. -> 삭제예정
 /* 참고 사이트 */
 // 샘플 :: http://mypocket-technologies.com/2013/08/create-a-collaborative-drawing-application-with-socket-io-node-js-and-canvas/
 // 설정 :: http://stackoverflow.com/questions/14353638/how-to-correctly-set-socket-io-ports-getting-socket-io-js-404
