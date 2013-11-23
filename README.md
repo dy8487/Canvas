@@ -1,8 +1,8 @@
-* Html5 project - modify ....
+* Html5 project
 * node.js, express, socket.io
-* 
+* Canvas 프로젝트 공유요청 방법
 
-Canvas 프로젝트 공유요청 방법
+
 1. git client 설치
  - 다운로드: http://www.git-scm.com/
 2. 윈도우 탐색기에서 프로젝트에서 사용할 폴더에서 오른마우스 클릭
