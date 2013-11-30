@@ -464,7 +464,8 @@ DrawingPad = function(options) {
 		$(selector).append(_buildToolBar); //add tool bar to DOM
 		
 		//register socket listeners
-		DP.thisObj.socket = io.connect("http://localhost:4000");
+		//DP.thisObj.socket = io.connect("http://localhost:4000");
+		DP.thisObj.socket = io.connect();
 	
 	    DP.thisObj.socket.on('setUserList', function(data) {
 			return setUserList(data); //show pop up list
@@ -499,9 +500,14 @@ DrawingPad = function(options) {
 				DP.myName = $(".userNameInput").val().trim();
 				//tell the server i'm here
 				DP.thisObj.socket.emit('setClientId', {id : id, senderName : DP.myName});
+				
+				// chat 아이디 설정 : 유기찬
+				DP.thisObj.socket.emit('setPseudo', DP.myName);
+				setPseudo();
 			});
 		});
 		$('.userNameModal').modal("show");
+		
 	};
 };
 

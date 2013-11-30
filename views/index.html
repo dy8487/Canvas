@@ -1,110 +1,109 @@
 <!doctype html>
 <html lang="en">
-	<title>Shared DrawPad</title>
-	<link type="text/css" href="css/bootstrap.min.css" rel="stylesheet"/>
-	<link type="text/css" href="css/drawpad.css" rel="stylesheet"/>
-	<link href="//netdna.bootstrapcdn.com/twitter-bootstrap/2.3.2/css/bootstrap-combined.min.css" rel="stylesheet" />
-	<script src="js/jquery-1.10.2.min.js"></script>
-	<script src="js/bootstrap.min.js"></script>
-	<script src="js/drawing.js"></script>
-	<script src="http://localhost:4000/socket.io/socket.io.js"></script>
-	<script type="text/javascript">
-        //var socket = io.connect('http://<%=host%>');
-        var socket = io.connect("http://localhost:4000");
-        
-        $(document).ready(function(){
-            socket.on('connected', function(){
-                console.log('connected');
-            });
-            
-            // 매칭완료되었을 때
-            socket.on('completeMatch', function(data){
-                console.log('completeMatch!');
-                $('.lobby').hide();
-                $('.wait').hide();
-                $('.chat').show();
-            });
-            
-            // 대화를 받았을 때
-            socket.on('receiveMessage', function(data){
-                $('.chatResult').prepend('<li>' + data.message + '</li>');
-            });
-            // 상대방이 나갔을 때 나도 같이 로비로 나감.
-            socket.on('disconnect', function(data){
-                console.log('disconnect');
-                $('.lobby').show();
-                $('.chat').hide();
-            });
-            
-            // 랜덤요청 시
-            $('#btnRequestRandomChat').click(function(){
-                $('.lobby').hide();
-                $('.wait').show();
-                socket.emit('requestRandomChat');
-            });
-            
-            // 요청 취소 시
-            $('#btnCancelRequest').click(function(){
-                $('.lobby').show();
-                $('.wait').hide();
-                $('.chat').hide();
-                socket.emit('cancelRequest');
-            });
-            
-            // 엔터입력 시
-            $('#inputMessage').keyup(function(e){
-                if (e.keyCode == 13){
-                    send();
-                }
-            });
-            // 채팅 내용 전송 시
-            $('#btnChat').click(function(){
-                send();
-            });
-        });
-        
-        function send(){
-            var message = $('#inputMessage').val();
-            if (message.length < 1){
-                alert('내용을 입력하세요.');
-                return;
-            }
-            socket.emit('sendMessage', {message:message});
-            $('#inputMessage').val('');
-        }
-    </script>
+	<header>
+		<title>Shared DrawPad</title>
+		
+		<link type="text/css" href="css/bootstrap.min.css" rel="stylesheet"/>
+		<link type="text/css" href="css/drawpad.css" rel="stylesheet"/>
+		<!-- <script src="js/jquery-1.10.2.min.js"></script> -->
+		<script src="http://code.jquery.com/jquery-1.7.1.min.js"></script>
+		
+		<script src="js/bootstrap.min.js"></script>
+		<script src="js/drawing.js"></script>
+		
+		<link type="text/css" href="style.css" rel="stylesheet">		
+		<script src="https://ajax.googleapis.com/ajax/libs/jqueryui/1.8.16/jquery-ui.js"></script>
+		<script src="/socket.io/socket.io.js"></script>
+		<script src="script.js"></script>
+	</header>
 	
 	<body>
+		<!-- Canvas -->
 		<div id="drawingPad">
 			<!-- This is where all the code will be place dynamically -->
 		</div>
 		
-		<div class="lobby container">
-	        <button id="btnRequestRandomChat" class="btn">채팅입장</button>
-	    </div>
-	    <div class="wait container" style="display:none">
-	        <div>상대방을 기다리는 중...</div>
-	        <button id="btnCancelRequest" class="btn">취소</button>
-	    </div>
-	    <div class="chat container" style="display:none">
-	        <input type="text" id="inputMessage" class="input-medium search-query" />
-	        <button type="submit" id="btnChat" class="btn">전송</button>
-	        <ul class="chatResult">
-	        </ul>
-	    </div>
-	    
-	</body>
+		<!-- chatting --> 
+		<div id="main" class="container">
+			<div id="chatEntries"></div>
+			<div id="entries" class="row">
+				<input type="text" id="messageInput">
+				<div class="btn-group">
+					<button id="submit" data-loading-text="Send" class="btn">
+						Send
+					</button>
+					<button data-toggle="dropdown" class="btn dropdown-toggle">
+						<span class="caret"></span>
+					</button>
+					<ul class="dropdown-menu">
+						<li>
+							<a id="edit" href="#modalPseudo" data-toggle="modal"><i class="icon-user"></i>Change name</a>
+						</li>
+						<li>
+							<a id="info" href="#modalInfos" data-toggle="modal"><i class="icon-info-sign"></i>Infos</a>
+						</li>
+					</ul>
+				</div>
+			</div>
+			<div id="nbUsersDiv">
+				<p>
+					There is <span id="nbUsers"></span> connected user(s).
+				</p>
+			</div>
+		</div>
+		
+	</body>	
+	
 	<script type="text/javascript">
 		$(document).bind("touchmove", function(e) {
 			e.preventDefault();
 		});
 		// overriding default options
 		var options = {
-			width:800,
-			height:500
+			width:500,
+			height:300
 		},
 		//init the drawpad
 		dp = new DrawingPad(options);
 		dp.init("#drawingPad");
-	</script>
+	</script>	
+	
+	<div id="modalPseudo" class="modal fade">
+		<div class="modal-header">
+			<h3>Choose a name</h3>
+		</div>
+		<div class="modal-body">
+			<p>
+				Choose a name :
+			</p>
+			<input type="text" id="pseudoInput">
+			<div id="alertPseudo" class="alert alert-error">
+				This name is already used ! Choose another one.
+			</div>
+		</div>
+		<div class="modal-footer">
+			<button id="pseudoSubmit" class="btn btn-primary">
+				Go to the chat
+			</button>
+		</div>
+	</div>
+	<div id="modalInfos" class="modal fade">
+		<div class="modal-header">
+			<h3>Infos</h3>
+		</div>
+		<div class="modal-body">
+			<p>
+				This application has been made with <a href="http://nodejs.org/">Node.js </a>, <a href="http://socket.io/">Socket.io</a>, <a href="http://expressjs.com/">Express </a>et <a href="http://jade-lang.com/">Jade</a>.
+			</p>
+			<p>
+				She use <a href="http://twitter.github.com/bootstrap/">Bootstrap </a>from <a href="https://twitter.com/">Twitter</a>and<a hre="http://rocha.la/jQuery-slimScroll">SlimScroll</a>.
+			</p>
+			<p>
+				The source has been published on Github under MIT license.
+			</p>
+			<p>
+				This application has been made by <a href="http://geekuillau.me">Guillaume Besson - Geekuillaume</a>.
+			</p>
+		</div>
+	</div>	
 </html>

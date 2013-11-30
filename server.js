@@ -6,22 +6,24 @@
 // 설정 :: http://stackoverflow.com/questions/14353638/how-to-correctly-set-socket-io-ports-getting-socket-io-js-404
 
 var express = require('express')
-	, app = express()
-	, router = require('./routes/router')
-	//, http = require('http')
+	, app = express();
+	//, router = require('./routes/router')
+var http = require('http')
 	, path = require('path')
 	, server = require('http').createServer(app)
 	, io = require('socket.io').listen(server);
 	;
 
 var connectedClients = {}; //used to keep a working list of the connections
+var pseudoArray = ['admin'];
 
 	// all environments
 	app.set('port', process.env.PORT || 4000);
 	app.set('views', __dirname + '/views');
 	app.set('view engine', 'html');
 	app.engine('.html', require('jqtpl').__express);
-	app.locals.layout = true;
+	//app.locals.layout = true;
+	app.set('view options', { layout: false });
 	app.use(express.favicon());
 	app.use(express.logger('dev'));
 	app.use(express.bodyParser());
@@ -34,16 +36,58 @@ if ('development' == app.get('env')) {
   app.use(express.errorHandler());
 }
 
-app.get('/', router.index);
-app.get('/index.html', router.index);
+app.get('/', function(req, res){
+  res.render('index.html');
+});
 
 server.listen(app.get('port'), function(){
   console.log('Express/socket.io server listening on port ' + app.get('port'));
 });
 
+var users = 0; //count the users
+
 //canvas 관련
 io.sockets.on('connection', function (socket) {
 	
+		users += 1; // Add 1 to the count
+	    reloadUsers(); // Send the count to all the users
+    
+    	socket.on('message', function (data) { // Broadcast the message to all
+                if(pseudoSet(socket))
+                {
+                        var transmit = {date : new Date().toISOString(), pseudo : returnPseudo(socket), message : data};
+                        socket.broadcast.emit('message', transmit);
+                        console.log("user "+ transmit['pseudo'] +" said \""+data+"\"");
+                }
+        });
+        socket.on('setPseudo', function (data) { // Assign a name to the user
+                if (pseudoArray.indexOf(data) == -1) // Test if the name is already taken
+                {
+                        socket.set('pseudo', data, function(){
+                                pseudoArray.push(data);
+                                socket.emit('pseudoStatus', 'ok');
+                                console.log("user " + data + " connected");
+                        });
+                }
+                else
+                {
+                        socket.emit('pseudoStatus', 'error'); // Send the error
+                }
+        });
+        socket.on('disconnect', function () { // Disconnection of the client
+                users -= 1;
+                reloadUsers();
+                if (pseudoSet(socket))
+                {
+                        var pseudo;
+                        socket.get('pseudo', function(err, name) {
+                                pseudo = name;
+                        });
+                        var index = pseudoArray.indexOf(pseudo);
+                        pseudo.slice(index - 1, 1);
+                }
+        });
+
 	//added clients
 	socket.on("setClientId", function (data) {
 	    connectedClients[data.id] = { 
@@ -101,78 +145,29 @@ io.sockets.on('connection', function (socket) {
 	            isErase: data.isErase,
 	            id: data.id
 	        });
-	});
-	    
+	    });
 
 });
 
 
-var socketRoom = {};
+function reloadUsers() { // Send the count of the users to all
+        io.sockets.emit('nbUsers', {"nb": users});
+}
 
-// socket.io 셋팅
-io.configure(function(){
-    io.set('transports', ['xhr-polling']);
-    io.set('polling duration', 10);
-    io.set('log level', 2);
-});
+function pseudoSet(socket) { // Test if the user has a name
+        var test;
+        socket.get('pseudo', function(err, name) {
+                if (name == null ) test = false;
+                else test = true;
+        });
+        return test;
+}
 
-io.sockets.on('connection', function(socket){
-    // 접속완료를 알림.
-    socket.emit('connected');
-    
-    // chat요청을 할 시
-    socket.on('requestRandomChat', function(data){
-        // 빈방이 있는지 확인
-        console.log('requestRandomChat');
-        var rooms = io.sockets.manager.rooms;
-        for (var key in rooms){
-            if (key == ''){
-                continue;
-            }
-            // 혼자있으면 입장
-            if (rooms[key].length == 1){
-                var roomKey = key.replace('/', '');
-                socket.join(roomKey);
-                io.sockets.in(roomKey).emit('completeMatch', {});
-                socketRoom[socket.id] = roomKey;
-                return;
-            }
-        }
-        // 빈방이 없으면 혼자 방만들고 기다림.
-        socket.join(socket.id);
-        socketRoom[socket.id] = socket.id;
-    });
-    
-    // 요청 취소 시
-    socket.on('cancelRequest', function(data){
-        socket.leave(socketRoom[socket.id]);
-    });
-    
-    // client -> server Message전송 시
-    socket.on('sendMessage', function(data){
-        console.log('sendMessage!');
-        io.sockets.in(socketRoom[socket.id]).emit('receiveMessage', data);
-    });
-    
-    // disconnect
-    socket.on('disconnect', function(data){
-        var key = socketRoom[socket.id];
-        socket.leave(key);
-        io.sockets.in(key).emit('disconnect');
-        var clients = io.sockets.clients(key);
-        for (var i = 0; i < clients.length; i++){
-            clients[i].leave(key);
-        }
-    });
-});
-
-
-
-
-
-
-
-
-
-
-
+function returnPseudo(socket) { // Return the name of the user
+        var pseudo;
+        socket.get('pseudo', function(err, name) {
+                if (name == null ) pseudo = false;
+                else pseudo = name;
+        });
+        return pseudo;
+}
