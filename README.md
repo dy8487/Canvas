@@ -16,4 +16,4 @@
 5. 생성된 key 를 이메일로 전달.
 6. 이후에 github 과 연동하여 프로젝트 진행
 
-test
+7. socket.io room : https://github.com/mudchobo/nodejs-random_chat
