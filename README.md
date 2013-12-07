@@ -17,3 +17,6 @@
 6. 이후에 github 과 연동하여 프로젝트 진행
 
 7. socket.io room : https://github.com/mudchobo/nodejs-random_chat
+
+8. 참가자 
+ - 곽동윤 책임, 김문옥 선임, 김재석 선임, 유기찬 선임, 정성일 선임
